@@ -1,0 +1,288 @@
+/* ============================================================
+   Global Styles — Church Management System
+   كنيسة الثلاثة فتية القديسين
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Tajawal:wght@300;400;500;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── CSS Variables ────────────────────────────────────────── */
+:root {
+  --church-blue:   #1e3a8a;
+  --church-gold:   #d97706;
+  --church-light:  #eff6ff;
+  --sidebar-w:     260px;
+
+  /* Light mode */
+  --bg-primary:    #f8fafc;
+  --bg-card:       #ffffff;
+  --bg-sidebar:    #1e3a8a;
+  --text-primary:  #0f172a;
+  --text-secondary:#475569;
+  --text-muted:    #94a3b8;
+  --border:        #e2e8f0;
+  --shadow:        0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-lg:     0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+}
+
+.dark {
+  --bg-primary:    #0f172a;
+  --bg-card:       #1e293b;
+  --bg-sidebar:    #0f172a;
+  --text-primary:  #f1f5f9;
+  --text-secondary:#94a3b8;
+  --text-muted:    #64748b;
+  --border:        #334155;
+  --shadow:        0 1px 3px rgba(0,0,0,0.4);
+  --shadow-lg:     0 10px 15px -3px rgba(0,0,0,0.4);
+}
+
+/* ── Base ─────────────────────────────────────────────────── */
+* { box-sizing: border-box; }
+
+html {
+  direction: rtl;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Cairo', 'Tajawal', sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s, color 0.3s;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Scrollbar ────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+.dark ::-webkit-scrollbar-thumb { background: #475569; }
+
+/* ── Selection ────────────────────────────────────────────── */
+::selection {
+  background: rgba(30, 58, 138, 0.2);
+  color: var(--church-blue);
+}
+
+/* ── Component Classes ────────────────────────────────────── */
+@layer components {
+
+  /* Card */
+  .card {
+    @apply bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700;
+  }
+
+  /* Input */
+  .input {
+    @apply w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600
+           bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100
+           placeholder-slate-400 dark:placeholder-slate-500
+           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+           transition-all duration-200 font-cairo text-sm;
+  }
+
+  .input:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
+  /* Select */
+  .select {
+    @apply input cursor-pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: left 12px center;
+    background-size: 16px;
+    padding-left: 40px;
+  }
+
+  /* Label */
+  .label {
+    @apply block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5;
+  }
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl
+           font-semibold text-sm transition-all duration-200 focus:outline-none
+           focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply btn bg-blue-800 hover:bg-blue-900 text-white focus:ring-blue-700
+           shadow-sm hover:shadow-md active:scale-[0.98];
+  }
+
+  .btn-gold {
+    @apply btn bg-amber-600 hover:bg-amber-700 text-white focus:ring-amber-500
+           shadow-sm hover:shadow-md active:scale-[0.98];
+  }
+
+  .btn-danger {
+    @apply btn bg-red-600 hover:bg-red-700 text-white focus:ring-red-500
+           shadow-sm active:scale-[0.98];
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent hover:bg-slate-100 dark:hover:bg-slate-700
+           text-slate-700 dark:text-slate-300 focus:ring-slate-300;
+  }
+
+  .btn-success {
+    @apply btn bg-emerald-600 hover:bg-emerald-700 text-white focus:ring-emerald-500
+           shadow-sm active:scale-[0.98];
+  }
+
+  .btn-outline {
+    @apply btn border border-slate-200 dark:border-slate-600
+           text-slate-700 dark:text-slate-300
+           hover:bg-slate-50 dark:hover:bg-slate-700 focus:ring-slate-300;
+  }
+
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+
+  /* Stat Card */
+  .stat-card {
+    @apply card p-5 flex items-center gap-4 hover:shadow-md transition-shadow duration-200;
+  }
+
+  /* Table */
+  .table-wrapper {
+    @apply overflow-x-auto rounded-xl border border-slate-100 dark:border-slate-700;
+  }
+
+  .table {
+    @apply w-full text-sm;
+  }
+
+  .table thead {
+    @apply bg-slate-50 dark:bg-slate-700/50;
+  }
+
+  .table th {
+    @apply px-4 py-3 text-right text-xs font-semibold text-slate-500 dark:text-slate-400
+           uppercase tracking-wider whitespace-nowrap;
+  }
+
+  .table td {
+    @apply px-4 py-3 text-slate-700 dark:text-slate-300 whitespace-nowrap;
+  }
+
+  .table tbody tr {
+    @apply border-t border-slate-100 dark:border-slate-700
+           hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors duration-150;
+  }
+
+  /* Page Header */
+  .page-header {
+    @apply flex items-center justify-between mb-6 flex-wrap gap-3;
+  }
+
+  .page-title {
+    @apply text-2xl font-bold text-slate-900 dark:text-white;
+  }
+
+  /* Section */
+  .section {
+    @apply mb-8;
+  }
+
+  /* Divider */
+  .divider {
+    @apply border-t border-slate-100 dark:border-slate-700 my-4;
+  }
+}
+
+/* ── Utilities ────────────────────────────────────────────── */
+@layer utilities {
+  .font-cairo { font-family: 'Cairo', sans-serif; }
+
+  .text-gradient {
+    @apply bg-gradient-to-r from-blue-800 to-amber-600 bg-clip-text text-transparent;
+  }
+
+  .bg-church-pattern {
+    background-image:
+      radial-gradient(circle at 20% 50%, rgba(30, 58, 138, 0.05) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(217, 119, 6, 0.05) 0%, transparent 50%);
+  }
+
+  /* Skeleton pulse */
+  .skeleton {
+    @apply bg-slate-200 dark:bg-slate-700 rounded animate-pulse;
+  }
+
+  /* Shimmer animation */
+  .shimmer {
+    background: linear-gradient(90deg,
+      rgba(255,255,255,0) 0%,
+      rgba(255,255,255,0.4) 50%,
+      rgba(255,255,255,0) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  @keyframes shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position:  200% 0; }
+  }
+
+  /* Scanner glow */
+  .scanner-active {
+    box-shadow: 0 0 0 3px rgba(30,58,138,0.4), 0 0 20px rgba(30,58,138,0.2);
+    animation: scanner-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes scanner-pulse {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(30,58,138,0.4), 0 0 20px rgba(30,58,138,0.2); }
+    50%       { box-shadow: 0 0 0 6px rgba(30,58,138,0.2), 0 0 40px rgba(30,58,138,0.4); }
+  }
+
+  /* Success flash */
+  .scan-success {
+    animation: scan-success-flash 0.5s ease-out;
+  }
+  @keyframes scan-success-flash {
+    0%   { background: rgba(16,185,129,0.3); }
+    100% { background: transparent; }
+  }
+
+  /* Fade in */
+  .animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Slide from right (RTL sidebar slide) */
+  .animate-slide-in {
+    animation: slideIn 0.25s ease-out;
+  }
+  @keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to   { transform: translateX(0);    opacity: 1; }
+  }
+}
+
+/* ── PWA Safe Area ────────────────────────────────────────── */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+}
+
+/* ── Print Styles (for ID cards + reports) ────────────────── */
+@media print {
+  .no-print { display: none !important; }
+  .print-only { display: block !important; }
+  body { background: white; color: black; }
+  .card { box-shadow: none; border: 1px solid #ddd; }
+}
