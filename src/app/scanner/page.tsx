@@ -19,9 +19,10 @@ import {
 } from 'lucide-react';
 
 export default function ScannerPage() {
-  const { lastResult, processing, history, handleScan, scanning, setScanning } = useQRScanner();
-  const { records: todayRecords, count: todayCount } = useTodayAttendance();
   const { admin } = useAdminAuth();
+  const isSuperAdmin = admin?.role === 'super_admin';
+  const { lastResult, processing, history, handleScan, scanning, setScanning } = useQRScanner(isSuperAdmin);
+  const { records: todayRecords, count: todayCount } = useTodayAttendance();
 
   const videoRef    = useRef<HTMLVideoElement>(null);
   const canvasRef   = useRef<HTMLCanvasElement>(null);
@@ -34,7 +35,6 @@ export default function ScannerPage() {
   const [camError, setCamError]         = useState<string | null>(null);
   const [facingMode, setFacingMode]     = useState<'environment' | 'user'>('environment');
 
-  const isSuperAdmin = admin?.role === 'super_admin';
   const canScan      = isSuperAdmin || windowStatus.allowed;
 
   useEffect(() => {
