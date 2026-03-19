@@ -2,7 +2,7 @@
 // Utils — Helper Functions
 // ============================================================
 
-import { EGYPTIAN_PHONE_REGEX, SCAN_RULES } from './constants';
+import { EGYPTIAN_PHONE_REGEX, SCAN_RULES } from '@/lib/constants';
 
 // ── Student Code Generator ────────────────────────────────
 export function generateStudentCode(): string {

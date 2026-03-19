@@ -13,6 +13,7 @@ import { formatDate, getDaysUntilBirthday } from '@/services/utils';
 import {
   Users, UserCheck, Clock, QrCode, Star,
   UserX, Calendar, Trophy, Cake,
+  BarChart3,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip,
@@ -49,7 +50,7 @@ export default function DashboardPage() {
           {/* Monthly Attendance Chart */}
           <div className="lg:col-span-2 card p-5">
             <h3 className="font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-              <BarChart size={18} className="text-blue-700" />
+              <BarChart3 size={18} className="text-blue-700" />
               الحضور الشهري
             </h3>
             {loading ? <SkeletonChart /> : (
