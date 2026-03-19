@@ -1,23 +1,23 @@
 // ============================================================
-// /profile — Student Profile Page
+// /profile — Student Profile + Edit
 // ============================================================
 
 'use client';
 
-import { useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import StudentPhoto from '@/components/ui/StudentPhoto';
 import { SkeletonProfile } from '@/components/skeletons';
 import { useRequireStudent } from '@/hooks/useAuth';
 import { useStudentAttendance } from '@/hooks/useAttendance';
 import { usePoints } from '@/hooks/usePoints';
 import { useStudentById } from '@/hooks/useStudents';
-import { formatDate, formatDateTime, getPhotoUrl } from '@/services/utils';
-import { APP_CONFIG } from '@/lib/constants';
+import { formatDate, formatDateTime, isValidEgyptianPhone } from '@/services/utils';
+import { updateStudent } from '@/services/students';
+import { STAGES, APP_CONFIG } from '@/lib/constants';
 import {
   Phone, BookOpen, Calendar, Star, QrCode,
-  CheckCircle, LogOut, User, Clock,
+  CheckCircle, LogOut, User, Clock, Pencil, X, Save,
 } from 'lucide-react';
 import QRCode from 'qrcode.react';
 import { studentLogout } from '@/services/auth';
@@ -25,10 +25,66 @@ import toast from 'react-hot-toast';
 
 export default function ProfilePage() {
   const { student: session, loading: sessionLoading } = useRequireStudent();
-  const { student, loading } = useStudentById(session?.student_code || null);
+  const { student, loading, error } = useStudentById(session?.student_code || null);
   const { records: attendance } = useStudentAttendance(session?.student_code || null);
   const { logs } = usePoints(session?.student_code || undefined);
   const router = useRouter();
+
+  // Edit state
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editForm, setEditForm] = useState({
+    phone: '',
+    parent_phone: '',
+    confessor: '',
+    stage: '',
+  });
+
+  function startEdit() {
+    if (!student) return;
+    setEditForm({
+      phone:        student.phone || '',
+      parent_phone: student.parent_phone || '',
+      confessor:    student.confessor || '',
+      stage:        student.stage || '',
+    });
+    setEditing(true);
+  }
+
+  async function saveEdit() {
+    if (!student) return;
+
+    if (!isValidEgyptianPhone(editForm.phone)) {
+      toast.error('رقم هاتفك غير صحيح');
+      return;
+    }
+    if (!isValidEgyptianPhone(editForm.parent_phone)) {
+      toast.error('رقم هاتف ولي الأمر غير صحيح');
+      return;
+    }
+    if (!editForm.stage) {
+      toast.error('يرجى اختيار الصف');
+      return;
+    }
+
+    setSaving(true);
+    const res = await updateStudent(student.student_code, {
+      phone:        editForm.phone.trim(),
+      parent_phone: editForm.parent_phone.trim(),
+      confessor:    editForm.confessor.trim() || null,
+      stage:        editForm.stage,
+    });
+    setSaving(false);
+
+    if (res.error) {
+      toast.error(res.error);
+    } else {
+      toast.success('تم حفظ التعديلات ✅');
+      setEditing(false);
+      // Reload page to reflect changes
+      window.location.reload();
+    }
+  }
 
   function handleLogout() {
     studentLogout();
@@ -48,10 +104,9 @@ export default function ProfilePage() {
 
   if (!student) return null;
 
-  const thisMonthAttendance = attendance.filter(a => {
-    const month = new Date().toISOString().slice(0, 7);
-    return a.date.startsWith(month);
-  }).length;
+  const thisMonthAttendance = attendance.filter(a =>
+    a.date.startsWith(new Date().toISOString().slice(0, 7))
+  ).length;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-slate-50 dark:from-slate-900 dark:to-slate-800">
@@ -71,12 +126,10 @@ export default function ProfilePage() {
 
       <div className="max-w-md mx-auto p-4 space-y-4 pb-8">
 
-        {/* Profile Card */}
+        {/* ── Profile Card ─────────────────────────────── */}
         <div className="card overflow-hidden">
-          {/* Blue top strip */}
           <div className="h-20 bg-gradient-to-r from-blue-900 to-blue-700" />
           <div className="px-5 pb-5">
-            {/* Avatar */}
             <div className="flex items-end justify-between -mt-10 mb-4">
               <div className="w-20 h-20 rounded-2xl border-4 border-white dark:border-slate-800 overflow-hidden shadow-lg">
                 <StudentPhoto photoUrl={student.photo_url} name={student.name} size="xl" />
@@ -86,38 +139,129 @@ export default function ProfilePage() {
                 {student.points} نقطة
               </span>
             </div>
-
             <h2 className="text-xl font-bold text-slate-900 dark:text-white">{student.name}</h2>
             <p className="text-slate-500 text-sm font-mono">{student.student_code}</p>
           </div>
         </div>
 
-        {/* Stats Row */}
+        {/* ── Stats ────────────────────────────────────── */}
         <div className="grid grid-cols-3 gap-3">
           <StatBox label="إجمالي الحضور"   value={attendance.length} color="blue" />
           <StatBox label="حضور هذا الشهر" value={thisMonthAttendance} color="emerald" />
-          <StatBox label="النقاط"          value={student.points}    color="amber" />
+          <StatBox label="النقاط"          value={student.points}     color="amber" />
         </div>
 
-        {/* Personal Info */}
-        <div className="card p-5 space-y-3">
-          <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <User size={16} className="text-blue-700" />
-            بياناتي
-          </h3>
-          <div className="space-y-2">
-            <InfoRow icon={<BookOpen size={14} />} label="الصف" value={student.stage} />
-            <InfoRow icon={<Phone size={14} />}    label="الهاتف" value={student.phone} />
-            {student.birthday && (
-              <InfoRow icon={<Calendar size={14} />} label="الميلاد" value={formatDate(student.birthday)} />
-            )}
-            {student.confessor && (
-              <InfoRow icon={<User size={14} />} label="الأب الاعترافي" value={student.confessor} />
+        {/* ── Personal Info + Edit ─────────────────────── */}
+        <div className="card p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <User size={16} className="text-blue-700" />
+              بياناتي
+            </h3>
+
+            {/* Edit / Cancel button */}
+            {!editing ? (
+              <button
+                onClick={startEdit}
+                className="flex items-center gap-1.5 text-xs font-semibold text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 px-3 py-1.5 rounded-xl transition-all"
+              >
+                <Pencil size={13} />
+                تعديل
+              </button>
+            ) : (
+              <button
+                onClick={() => setEditing(false)}
+                className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 px-3 py-1.5 rounded-xl transition-all"
+              >
+                <X size={13} />
+                إلغاء
+              </button>
             )}
           </div>
+
+          {/* View mode */}
+          {!editing ? (
+            <div className="space-y-2.5">
+              <InfoRow icon={<BookOpen size={14} />} label="الصف"           value={student.stage} />
+              <InfoRow icon={<Phone size={14} />}    label="الهاتف"         value={student.phone} />
+              <InfoRow icon={<Phone size={14} />}    label="ولي الأمر"      value={student.parent_phone} />
+              {student.birthday   && <InfoRow icon={<Calendar size={14} />} label="الميلاد"        value={formatDate(student.birthday)} />}
+              {student.confessor  && <InfoRow icon={<User size={14} />}     label="الأب الاعترافي" value={student.confessor} />}
+            </div>
+          ) : (
+            /* Edit mode */
+            <div className="space-y-3">
+              <div>
+                <label className="label">رقم هاتفك</label>
+                <input
+                  type="tel"
+                  className="input text-sm"
+                  value={editForm.phone}
+                  onChange={e => setEditForm(p => ({ ...p, phone: e.target.value }))}
+                  maxLength={11}
+                  dir="ltr"
+                  inputMode="numeric"
+                />
+              </div>
+              <div>
+                <label className="label">رقم هاتف ولي الأمر</label>
+                <input
+                  type="tel"
+                  className="input text-sm"
+                  value={editForm.parent_phone}
+                  onChange={e => setEditForm(p => ({ ...p, parent_phone: e.target.value }))}
+                  maxLength={11}
+                  dir="ltr"
+                  inputMode="numeric"
+                />
+              </div>
+              <div>
+                <label className="label">الصف الدراسي</label>
+                <select
+                  className="select text-sm"
+                  value={editForm.stage}
+                  onChange={e => setEditForm(p => ({ ...p, stage: e.target.value }))}
+                >
+                  <optgroup label="إعدادي">
+                    {STAGES.filter(s => s.group === 'إعدادي').map(s => (
+                      <option key={s.value} value={s.value}>{s.label}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="ثانوي">
+                    {STAGES.filter(s => s.group === 'ثانوي').map(s => (
+                      <option key={s.value} value={s.value}>{s.label}</option>
+                    ))}
+                  </optgroup>
+                </select>
+              </div>
+              <div>
+                <label className="label">الأب الاعترافي</label>
+                <input
+                  type="text"
+                  className="input text-sm"
+                  value={editForm.confessor}
+                  onChange={e => setEditForm(p => ({ ...p, confessor: e.target.value }))}
+                  placeholder="اختياري"
+                />
+              </div>
+
+              <button
+                onClick={saveEdit}
+                disabled={saving}
+                className="btn-success w-full mt-1"
+              >
+                {saving ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Save size={15} />
+                )}
+                {saving ? 'جاري الحفظ...' : 'حفظ التعديلات'}
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* QR Code */}
+        {/* ── QR Code ──────────────────────────────────── */}
         {student.qr_code && (
           <div className="card p-5 flex flex-col items-center gap-3">
             <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2 self-start">
@@ -133,7 +277,7 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* Attendance History */}
+        {/* ── Attendance History ────────────────────────── */}
         <div className="card p-5">
           <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-3">
             <Clock size={16} className="text-blue-700" />
@@ -144,10 +288,7 @@ export default function ProfilePage() {
           ) : (
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {attendance.slice(0, 20).map(a => (
-                <div
-                  key={a.id}
-                  className="flex items-center justify-between text-sm py-2 border-b border-slate-50 dark:border-slate-700/50 last:border-0"
-                >
+                <div key={a.id} className="flex items-center justify-between text-sm py-2 border-b border-slate-50 dark:border-slate-700/50 last:border-0">
                   <div className="flex items-center gap-2">
                     <CheckCircle size={14} className="text-emerald-500 flex-shrink-0" />
                     <span className="text-slate-700 dark:text-slate-300">{formatDate(a.date)}</span>
@@ -159,7 +300,7 @@ export default function ProfilePage() {
           )}
         </div>
 
-        {/* Points Log */}
+        {/* ── Points Log ───────────────────────────────── */}
         {logs.length > 0 && (
           <div className="card p-5">
             <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-3">
@@ -183,7 +324,7 @@ export default function ProfilePage() {
   );
 }
 
-// Helpers
+// ── Helpers ───────────────────────────────────────────────
 function StatBox({ label, value, color }: { label: string; value: number; color: string }) {
   const colorMap: Record<string, string> = {
     blue:    'bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-400',
