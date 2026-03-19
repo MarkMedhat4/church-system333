@@ -1,10 +1,10 @@
 // ============================================================
-// /profile — Student Profile + Edit + Photo Upload
+// /profile — Student Profile + Edit + QR Download
 // ============================================================
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { SkeletonProfile } from '@/components/skeletons';
@@ -19,7 +19,7 @@ import { STAGES, APP_CONFIG } from '@/lib/constants';
 import {
   Phone, BookOpen, Calendar, Star, QrCode,
   CheckCircle, LogOut, User, Clock,
-  Pencil, X, Save, Camera,
+  Pencil, X, Save, Camera, ImagePlus, Download,
 } from 'lucide-react';
 import QRCode from 'qrcode.react';
 import { studentLogout } from '@/services/auth';
@@ -31,15 +31,72 @@ export default function ProfilePage() {
   const { records: attendance } = useStudentAttendance(session?.student_code || null);
   const { logs } = usePoints(session?.student_code || undefined);
   const router = useRouter();
+  const qrRef = useRef<HTMLDivElement>(null);
 
-  const [editing, setEditing]     = useState(false);
-  const [saving, setSaving]       = useState(false);
+  const [editing, setEditing]           = useState(false);
+  const [saving, setSaving]             = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [editForm, setEditForm]   = useState({
+  const [photoFile, setPhotoFile]       = useState<File | null>(null);
+  const [editForm, setEditForm]         = useState({
     phone: '', parent_phone: '', confessor: '', stage: '',
   });
 
+  // ── Download QR as PNG ────────────────────────────────────
+  function downloadQR() {
+    if (!student?.qr_code) return;
+
+    // Get the canvas element inside the QR div
+    const canvas = qrRef.current?.querySelector('canvas') as HTMLCanvasElement;
+    if (!canvas) {
+      toast.error('تعذّر تحميل QR');
+      return;
+    }
+
+    // Create a new canvas with padding + student name
+    const padding  = 24;
+    const nameH    = 40;
+    const newCanvas = document.createElement('canvas');
+    newCanvas.width  = canvas.width  + padding * 2;
+    newCanvas.height = canvas.height + padding * 2 + nameH;
+
+    const ctx = newCanvas.getContext('2d')!;
+
+    // White background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, newCanvas.width, newCanvas.height);
+
+    // QR image
+    ctx.drawImage(canvas, padding, padding);
+
+    // Student name below QR
+    ctx.fillStyle = '#1e3a8a';
+    ctx.font      = 'bold 16px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(
+      student.name,
+      newCanvas.width / 2,
+      canvas.height + padding + 22
+    );
+
+    // Student code
+    ctx.fillStyle = '#94a3b8';
+    ctx.font      = '12px Arial';
+    ctx.fillText(
+      student.student_code,
+      newCanvas.width / 2,
+      canvas.height + padding + 38
+    );
+
+    // Download
+    const link    = document.createElement('a');
+    link.download = `QR-${student.name}-${student.student_code}.png`;
+    link.href     = newCanvas.toDataURL('image/png');
+    link.click();
+
+    toast.success('تم تحميل QR ✅');
+  }
+
+  // ── Edit helpers ──────────────────────────────────────────
   function startEdit() {
     if (!student) return;
     setEditForm({
@@ -83,7 +140,6 @@ export default function ProfilePage() {
 
     setSaving(true);
 
-    // ── Upload photo if changed ───────────────────────
     let photo_url = student.photo_url;
     if (photoFile) {
       const ext      = photoFile.name.split('.').pop();
@@ -100,7 +156,6 @@ export default function ProfilePage() {
       photo_url = fileName;
     }
 
-    // ── Update student record ─────────────────────────
     const res = await updateStudent(student.student_code, {
       phone:        editForm.phone.trim(),
       parent_phone: editForm.parent_phone.trim(),
@@ -125,7 +180,7 @@ export default function ProfilePage() {
     router.push('/student-login');
   }
 
-  // ── Loading ───────────────────────────────────────────
+  // ── Loading ───────────────────────────────────────────────
   if (sessionLoading || loading) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4">
@@ -139,8 +194,6 @@ export default function ProfilePage() {
   const thisMonthAttendance = attendance.filter(a =>
     a.date.startsWith(new Date().toISOString().slice(0, 7))
   ).length;
-
-  const currentPhotoSrc = photoPreview || getPhotoUrl(student.photo_url);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-slate-50 dark:from-slate-900 dark:to-slate-800">
@@ -162,40 +215,27 @@ export default function ProfilePage() {
           <div className="h-20 bg-gradient-to-r from-blue-900 to-blue-700" />
           <div className="px-5 pb-5">
             <div className="flex items-end justify-between -mt-10 mb-4">
-              {/* Photo — clickable in edit mode */}
-              <div className="relative">
-                <div className="w-20 h-20 rounded-2xl border-4 border-white dark:border-slate-800 overflow-hidden shadow-lg bg-blue-200">
-                  {currentPhotoSrc && currentPhotoSrc !== '/default-avatar.png' ? (
-                    <Image src={currentPhotoSrc} alt={student.name} width={80} height={80} className="object-cover w-full h-full" />
-                  ) : (
-                    <div className="w-full h-full bg-blue-500 flex items-center justify-center">
-                      <span className="text-white text-2xl font-bold">{student.name.charAt(0)}</span>
-                    </div>
-                  )}
-                </div>
-                {/* Camera overlay — edit mode only */}
-                {editing && (
-                  <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl cursor-pointer">
-                    <Camera size={20} className="text-white" />
-                    <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
-                  </label>
+              <div className="w-20 h-20 rounded-2xl border-4 border-white dark:border-slate-800 overflow-hidden shadow-lg bg-blue-200">
+                {(photoPreview || student.photo_url) ? (
+                  <Image
+                    src={photoPreview || getPhotoUrl(student.photo_url)}
+                    alt={student.name}
+                    width={80} height={80}
+                    className="object-cover w-full h-full"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-blue-500 flex items-center justify-center">
+                    <span className="text-white text-2xl font-bold">{student.name.charAt(0)}</span>
+                  </div>
                 )}
               </div>
-
               <span className="bg-amber-50 dark:bg-amber-900/30 text-amber-700 font-bold text-sm px-3 py-1 rounded-xl flex items-center gap-1">
                 <Star size={14} className="text-amber-400" />
                 {student.points} نقطة
               </span>
             </div>
-
             <h2 className="text-xl font-bold text-slate-900 dark:text-white">{student.name}</h2>
             <p className="text-slate-500 text-sm font-mono">{student.student_code}</p>
-
-            {editing && (
-              <p className="text-xs text-blue-600 dark:text-blue-400 mt-1 flex items-center gap-1">
-                <Camera size={12} /> اضغط على الصورة لتغييرها
-              </p>
-            )}
           </div>
         </div>
 
@@ -208,31 +248,22 @@ export default function ProfilePage() {
 
         {/* ── Info + Edit ─────────────────────────────── */}
         <div className="card p-5">
-          {/* Section header */}
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <User size={16} className="text-blue-700" />
-              بياناتي
+              <User size={16} className="text-blue-700" /> بياناتي
             </h3>
-
             {!editing ? (
-              <button
-                onClick={startEdit}
-                className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 hover:bg-blue-100 text-xs font-bold px-3 py-2 rounded-xl transition-all"
-              >
+              <button onClick={startEdit} className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 hover:bg-blue-100 text-xs font-bold px-3 py-2 rounded-xl transition-all">
                 <Pencil size={13} /> تعديل البيانات
               </button>
             ) : (
-              <button
-                onClick={cancelEdit}
-                className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 px-3 py-2 rounded-xl transition-all"
-              >
+              <button onClick={cancelEdit} className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 px-3 py-2 rounded-xl transition-all">
                 <X size={13} /> إلغاء
               </button>
             )}
           </div>
 
-          {/* ── VIEW mode ── */}
+          {/* VIEW */}
           {!editing ? (
             <div className="space-y-2.5">
               <InfoRow icon={<BookOpen size={14} />} label="الصف"           value={student.stage} />
@@ -241,9 +272,8 @@ export default function ProfilePage() {
               {student.birthday  && <InfoRow icon={<Calendar size={14} />} label="الميلاد"        value={formatDate(student.birthday)} />}
               {student.confessor && <InfoRow icon={<User size={14} />}     label="الأب الاعترافي" value={student.confessor} />}
             </div>
-
           ) : (
-          /* ── EDIT mode ── */
+          /* EDIT */
             <div className="space-y-3">
               <div>
                 <label className="label">رقم هاتفك *</label>
@@ -280,7 +310,38 @@ export default function ProfilePage() {
                   placeholder="اختياري" />
               </div>
 
-              <button onClick={saveEdit} disabled={saving} className="btn-success w-full mt-2">
+              {/* Photo Upload */}
+              <div>
+                <label className="label">الصورة الشخصية</label>
+                <label className="flex items-center gap-3 w-full cursor-pointer border-2 border-dashed border-slate-300 dark:border-slate-600 hover:border-blue-400 rounded-xl px-4 py-3 transition-colors">
+                  <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-200 dark:bg-slate-700 flex-shrink-0">
+                    {(photoPreview || student.photo_url) ? (
+                      <Image
+                        src={photoPreview || getPhotoUrl(student.photo_url)}
+                        alt="صورة" width={48} height={48}
+                        className="object-cover w-full h-full"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Camera size={20} className="text-slate-400" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                      {photoFile ? photoFile.name : 'اختر صورة جديدة'}
+                    </p>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {photoFile ? '✅ جاهزة للرفع' : 'من الكاميرا أو المعرض'}
+                    </p>
+                  </div>
+                  <ImagePlus size={20} className="text-blue-600 flex-shrink-0" />
+                  <input type="file" accept="image/*" capture="user" className="hidden" onChange={handlePhotoChange} />
+                </label>
+              </div>
+
+              {/* Save */}
+              <button onClick={saveEdit} disabled={saving} className="btn-success w-full mt-1">
                 {saving
                   ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   : <Save size={15} />
@@ -291,22 +352,34 @@ export default function ProfilePage() {
           )}
         </div>
 
-        {/* ── QR Code ────────────────────────────────── */}
+        {/* ── QR Code + Download ──────────────────────── */}
         {student.qr_code && (
           <div className="card p-5 flex flex-col items-center gap-3">
             <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2 self-start">
               <QrCode size={16} className="text-blue-700" /> QR Code الخاص بي
             </h3>
-            <div className="p-3 bg-white rounded-2xl shadow-sm">
-              <QRCode value={student.qr_code} size={180} />
+
+            {/* QR canvas — ref used for download */}
+            <div ref={qrRef} className="p-3 bg-white rounded-2xl shadow-sm">
+              <QRCode value={student.qr_code} size={180} renderAs="canvas" />
             </div>
+
             <p className="text-xs text-slate-400 text-center">
               أرِ هذا الكود للمشرف عند الحضور يوم الأحد
             </p>
+
+            {/* Download Button */}
+            <button
+              onClick={downloadQR}
+              className="btn-primary w-full flex items-center justify-center gap-2"
+            >
+              <Download size={16} />
+              تحميل QR كصورة
+            </button>
           </div>
         )}
 
-        {/* ── Attendance ──────────────────────────────── */}
+        {/* ── Attendance ───────────────────────────────── */}
         <div className="card p-5">
           <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-3">
             <Clock size={16} className="text-blue-700" /> سجل الحضور
@@ -328,7 +401,7 @@ export default function ProfilePage() {
           )}
         </div>
 
-        {/* ── Points Log ──────────────────────────────── */}
+        {/* ── Points Log ───────────────────────────────── */}
         {logs.length > 0 && (
           <div className="card p-5">
             <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-3">
@@ -346,13 +419,12 @@ export default function ProfilePage() {
             </div>
           </div>
         )}
-
       </div>
     </div>
   );
 }
 
-// ── Helper Components ─────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────
 function StatBox({ label, value, color }: { label: string; value: number; color: string }) {
   const colorMap: Record<string, string> = {
     blue:    'bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-400',
