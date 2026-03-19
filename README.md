@@ -31,7 +31,7 @@
 نظام SaaS متكامل مصمم خصيصاً لكنيسة الثلاثة فتية القديسين بأسوان، يُدير الخدمتين الإعدادية والثانوية بشكل رقمي كامل — من تسجيل المخدومين وحتى تتبع الحضور والنقاط، مع لوحة تحكم مباشرة (Realtime) للخدام.
 
 ```
-المخدوم يسجّل → الخادم يقبل → QR يُولَّد تلقائياً → الحضور يُسجَّل → نقاط تُحسب
+المخدوم يسجّل ← الخادم يقبل ← QR يُولَّد تلقائياً ← الحضور يُسجَّل ← نقاط تُحسب
 ```
 
 ---
@@ -41,15 +41,15 @@
 | المميزة | التفاصيل |
 |---------|----------|
 | 🔐 **تسجيل متدرج** | فورم 3 خطوات مع رفع الصورة |
-| ✅ **نظام موافقة** | Admin يقبل/يرفض مع إشعار فوري |
-| 📱 **QR ذكي** | يُولَّد تلقائياً عند القبول، ومضاد للغش |
+| ✅ **نظام موافقة** | الخادم يقبل/يرفض مع إشعار فوري |
+| 📱 **QR ذكي** | يُولَّد تلقائياً عند القبول، مضاد للغش |
 | 📊 **Dashboard حي** | إحصائيات فورية بدون Refresh |
-| 🏆 **نقاط تلقائية** | كل 4 حضور = نقطة بدون تدخل |
-| 🎂 **أعياد الميلاد** | تنبيهات فورية للأسبوع القادم |
-| 🪪 **بطاقات هوية** | طباعة PDF مع QR لكل مخدوم |
+| 🏆 **نقاط تلقائية** | كل 4 حضور = نقطة بدون تدخل يدوي |
+| 🎂 **أعياد الميلاد** | تنبيهات للأسبوع القادم + جدول الشهر |
+| 🪪 **بطاقات هوية** | طباعة مع QR لكل مخدوم |
 | 📥 **استيراد جماعي** | Excel أو SQL مباشرة |
-| 🌙 **Dark Mode** | تبديل فوري بدون إعادة تحميل |
-| 📲 **PWA** | قابل للتثبيت على المحمول |
+| 🌙 **Dark Mode** | تبديل فوري |
+| 📲 **PWA** | قابل للتثبيت على الموبايل |
 
 ---
 
@@ -75,33 +75,24 @@
 
 ---
 
-## 👥 أنواع المستخدمين
+## 👥 الخدام (Admins)
 
-### 👨‍💼 Admin — الخادم
-> يسجّل دخوله بـ Email + Password عبر Supabase Auth
+| الاسم | البريد الإلكتروني | الصلاحية |
+|-------|------------------|----------|
+| مارك مدحت | markmadhat03@gmail.com | `super_admin` — مسح QR في أي وقت |
+| مستر جرجس | gerges@gmail.com | `admin` — مسح الأحد 6م–9م |
+| مستر جورج | george@gmail.com | `admin` — مسح الأحد 6م–9م |
 
-| الصلاحية | الوصف |
-|----------|-------|
-| 📋 مراجعة الطلبات | قبول أو رفض المخدومين الجدد |
-| 📷 مسح QR | تسجيل الحضور بالكاميرا |
-| ⭐ النقاط | إضافة أو خصم نقاط يدوياً |
-| 📊 Dashboard | إحصائيات كاملة وفورية |
-| 🪪 بطاقات الهوية | طباعة بطاقات لكل المخدومين |
-| 📈 التقارير | تصدير Excel و PDF |
-| ⚙️ الإعدادات | إدارة حسابات الخدام |
+> **super_admin** = صلاحية كاملة بدون قيود وقت أو يوم
 
 ---
 
-### 👤 Student — المخدوم
-> يسجّل دخوله برقم هاتفه فقط
+## 👤 المخدومون (Students)
 
-| الإمكانية | الوصف |
-|-----------|-------|
-| 📝 تسجيل | فورم 3 خطوات بسيط |
-| 👤 البروفايل | مشاهدة بياناته الكاملة |
-| 📱 QR الخاص | يعرضه للخادم كل أحد |
-| 📅 الحضور | سجل كامل بالتواريخ |
-| ⭐ النقاط | رصيده ومصادره |
+- تسجيل دخول برقم الهاتف فقط
+- مشاهدة البيانات والحضور والنقاط
+- عرض وتحميل QR الخاص
+- تعديل البيانات الشخصية والصورة
 
 ---
 
@@ -114,15 +105,15 @@
    [البيانات الشخصية] → [الصف الدراسي] → [الصورة]
        ↓
 3. يُحفظ في قاعدة البيانات
-   status = "0" (pending) · active = false
+   status = "0" (معلق) · active = false
        ↓
-4. يظهر فورًا في /registrations عند الخادم
+4. يظهر فوراً في /registrations عند الخادم
        ↓
 5. الخادم يقرر
-   ✅ قبول → status = "1" · active = true · QR يُولد تلقائياً
+   ✅ قبول → status = "1" · active = true · QR يُولَّد تلقائياً
    ❌ رفض  → status = "-1" · active = false
        ↓
-6. المخدوم يقدر يسجل دخول ويشوف QR
+6. المخدوم يسجّل دخول ويشوف QR
 ```
 
 ---
@@ -130,26 +121,28 @@
 ## 📅 نظام الحضور والـ QR
 
 ```
-⚠️  شروط المسح الصارمة
-────────────────────────────────
+⚠️  شروط المسح الرسمية
+────────────────────────────────────────
 📅  يوم الأحد فقط
 🕕  من 6:00 مساءً إلى 9:00 مساءً
 🔒  8 ثوانٍ lock بين كل مسح وآخر
-⚡  حد أقصى 30 مسح/دقيقة
-🚫  مسح مرة واحدة فقط يومياً per student
+⚡  حد أقصى 30 مسح / دقيقة
+🚫  مسح مرة واحدة فقط في اليوم لكل مخدوم
+
+🛡️  super_admin (مارك مدحت) ← بدون أي قيود
 ```
 
 **Anti-Cheat System:**
 - `UNIQUE(student_id, date)` في قاعدة البيانات
 - Rate limiting في الكود
-- التحقق من نافذة الوقت في Server وClient معاً
+- فحص نافذة الوقت في Client و Server معاً
 
 ---
 
 ## 🏆 نظام النقاط
 
 ```
-4 حضور في الشهر الواحد
+4 حضور في نفس الشهر
          ↓
    +1 نقطة تلقائياً
    (Supabase Database Trigger)
@@ -160,13 +153,13 @@
 ```
 
 **الخادم يستطيع أيضاً:**
-- ➕ إضافة نقاط يدوياً (نشاط، حفظ، سلوك...)
+- ➕ إضافة نقاط يدوياً مع ذكر السبب
 - ➖ خصم نقاط مع ذكر السبب
 - كل عملية مسجّلة في `points_log` بالتفصيل
 
 ---
 
-## 📊 Dashboard — ما يراه الخادم فورًا
+## 📊 Dashboard — ما يراه الخادم فوراً
 
 ```
 ┌──────────┬──────────┬──────────┬──────────┐
@@ -176,12 +169,11 @@
 
 📈 رسم بياني للحضور الشهري (6 أشهر)
 
-🏆 المتصدرون         🎂 أعياد ميلاد قريبة
-┌─────────────┐      ┌─────────────────────┐
-│ 🥇 يوسف  8★ │      │ 🎂 مريم — غداً      │
-│ 🥈 مريم  6★ │      │ 🎂 بيشوي — بعد 3أيام│
-│ 🥉 بيشوي 4★ │      └─────────────────────┘
-└─────────────┘
+🏆 المتصدرون          🎂 أعياد ميلاد قريبة
+┌──────────────┐      ┌──────────────────────┐
+│ 🥇 اسم   8★  │      │ 🎂 اسم — غداً        │
+│ 🥈 اسم   6★  │      │ 🎂 اسم — بعد 3 أيام  │
+└──────────────┘      └──────────────────────┘
 ```
 
 ---
@@ -192,53 +184,53 @@
 church-system/
 │
 ├── 📂 src/
-│   ├── 📂 app/                   ← الصفحات (UI فقط)
-│   │   ├── login/                ← دخول الخادم
-│   │   ├── student-login/        ← دخول المخدوم
-│   │   ├── register/             ← تسجيل جديد
-│   │   ├── dashboard/            ← لوحة التحكم
-│   │   ├── registrations/        ← طلبات الانتظار
-│   │   ├── students/             ← إدارة المخدومين
-│   │   ├── scanner/              ← مسح QR
-│   │   ├── points/               ← النقاط + Leaderboard
-│   │   ├── id-cards/             ← بطاقات الهوية
-│   │   ├── reports/              ← تقارير + تصدير
-│   │   ├── import/               ← استيراد Excel/SQL
-│   │   ├── settings/             ← المشرفون والإعدادات
-│   │   └── profile/              ← بروفايل المخدوم
+│   ├── 📂 app/                    ← الصفحات (UI فقط)
+│   │   ├── login/                 ← دخول الخادم
+│   │   ├── student-login/         ← دخول المخدوم (بالهاتف)
+│   │   ├── register/              ← تسجيل جديد (3 خطوات)
+│   │   ├── dashboard/             ← لوحة التحكم
+│   │   ├── registrations/         ← طلبات الانتظار
+│   │   ├── students/              ← إدارة المخدومين
+│   │   ├── scanner/               ← مسح QR بالكاميرا
+│   │   ├── points/                ← النقاط + Leaderboard
+│   │   ├── id-cards/              ← بطاقات الهوية
+│   │   ├── reports/               ← تقارير + Excel/PDF
+│   │   ├── import/                ← استيراد Excel/SQL
+│   │   ├── settings/              ← المشرفون والإعدادات
+│   │   └── profile/               ← بروفايل المخدوم
 │   │
-│   ├── 📂 hooks/                 ← State + Effects
+│   ├── 📂 hooks/                  ← State + Effects
 │   │   ├── useAuth.ts
-│   │   ├── useStudents.ts        ← مع Realtime
-│   │   ├── useAttendance.ts      ← مع QR Scanner
-│   │   └── usePoints.ts          ← مع Dashboard
+│   │   ├── useStudents.ts         ← مع Realtime
+│   │   ├── useAttendance.ts       ← مع QR Scanner
+│   │   └── usePoints.ts           ← مع Dashboard
 │   │
-│   ├── 📂 services/              ← Business Logic
+│   ├── 📂 services/               ← Business Logic
 │   │   ├── auth.ts
 │   │   ├── students.ts
-│   │   ├── attendance.ts         ← Anti-Cheat هنا
+│   │   ├── attendance.ts          ← Anti-Cheat هنا
 │   │   ├── points.ts
 │   │   └── utils.ts
 │   │
 │   ├── 📂 components/
-│   │   ├── layout/               ← Sidebar + Layout
-│   │   ├── ui/                   ← Modal, Pagination, StatCard...
-│   │   └── skeletons/            ← Loading states
+│   │   ├── layout/                ← Sidebar + Layout
+│   │   ├── ui/                    ← Modal, Pagination, StatCard...
+│   │   └── skeletons/             ← Loading states
 │   │
 │   ├── 📂 lib/
-│   │   ├── supabaseClient.ts     ← Client معزول
-│   │   └── constants.ts          ← إعدادات وثوابت
+│   │   ├── supabaseClient.ts      ← Client معزول
+│   │   └── constants.ts           ← إعدادات وثوابت
 │   │
 │   └── 📂 types/
-│       └── index.ts              ← كل الـ TypeScript Types
+│       └── index.ts               ← كل الـ TypeScript Types
 │
 ├── 📂 supabase/
-│   ├── schema.sql                ← الجداول + RLS + Triggers
-│   └── helpers.sql               ← RPCs + Views + Realtime
+│   ├── schema.sql                 ← الجداول + RLS + Triggers
+│   └── helpers.sql                ← RPCs + Views + Realtime
 │
 └── 📂 public/
-    ├── manifest.json             ← PWA
-    └── offline.html              ← Offline fallback
+    ├── manifest.json              ← PWA
+    └── offline.html               ← Offline fallback
 ```
 
 ---
@@ -246,15 +238,15 @@ church-system/
 ## 🗃️ قاعدة البيانات
 
 ```sql
-students        ← بيانات المخدومين + QR + النقاط
-attendance      ← سجل الحضور (UNIQUE per day)
-points_log      ← كل تغيير في النقاط بالتفصيل
-admins          ← حسابات الخدام
+students     ← بيانات المخدومين + QR + النقاط
+attendance   ← سجل الحضور  (UNIQUE per student per day)
+points_log   ← كل تغيير في النقاط بالتفصيل
+admins       ← حسابات الخدام
 ```
 
 **Triggers تلقائية:**
-- ✅ توليد QR عند القبول
-- ✅ حساب النقاط عند كل 4 حضور
+- ✅ توليد QR عند قبول المخدوم
+- ✅ إضافة نقطة عند كل 4 حضور في الشهر
 - ✅ تحديث `updated_at` تلقائياً
 
 ---
@@ -269,7 +261,7 @@ admins          ← حسابات الخدام
 | **Student** | تسجيل دخول برقم الهاتف + فحص status |
 | **QR** | Anti-cheat متعدد الطبقات |
 | **Secrets** | `.env` فقط — لا أي key في الكود |
-| **Storage** | Student photos: Public · ID cards: Private |
+| **Storage** | student-photos: Public · id-cards: Private |
 
 ---
 
@@ -287,7 +279,7 @@ admins          ← حسابات الخدام
 | النقاط | `/points` | Admin |
 | بطاقات الهوية | `/id-cards` | Admin |
 | التقارير | `/reports` | Admin |
-| الاستيراد | `/import` | Admin |
+| استيراد بيانات | `/import` | Admin |
 | الإعدادات | `/settings` | Admin |
 | البروفايل | `/profile` | Student |
 
@@ -295,14 +287,8 @@ admins          ← حسابات الخدام
 
 ## 🚀 تشغيل المشروع محلياً
 
-### المتطلبات
-- Node.js v18+
-- حساب على [Supabase](https://supabase.com)
-
-### الخطوات
-
 ```bash
-# 1. فك الضغط وادخل الفولدر
+# 1. ادخل الفولدر
 cd church-system
 
 # 2. ثبّت الـ packages
@@ -312,7 +298,7 @@ npm install
 cp .env.local.example .env.local
 ```
 
-عبّي `.env.local` بالقيم من Supabase Dashboard:
+عبّي `.env.local`:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
@@ -323,10 +309,10 @@ NEXT_PUBLIC_SCAN_END_HOUR=21
 ```
 
 ```bash
-# 4. شغّل المشروع
+# 4. شغّل
 npm run dev
 
-# 5. افتح المتصفح
+# 5. افتح
 # http://localhost:3000/login
 ```
 
@@ -334,14 +320,16 @@ npm run dev
 
 ## ☁️ إعداد Supabase
 
-```bash
-# في Supabase SQL Editor، شغّل بالترتيب:
-1. supabase/schema.sql    ← الجداول + RLS + Triggers
-2. supabase/helpers.sql   ← RPCs + Views + Realtime
+```sql
+-- شغّل بالترتيب في SQL Editor
+-- 1. supabase/schema.sql
+-- 2. supabase/helpers.sql
 
-# ثم أضف أول Admin:
-INSERT INTO admins (name, email, role)
-VALUES ('اسمك', 'email@gmail.com', 'super_admin');
+-- أضف الخدام
+INSERT INTO admins (name, email, role) VALUES
+  ('مارك مدحت',  'markmadhat03@gmail.com', 'super_admin'),
+  ('مستر جرجس', 'gerges@gmail.com',        'admin'),
+  ('مستر جورج',  'george@gmail.com',         'admin');
 ```
 
 **Storage Buckets:**
@@ -355,16 +343,12 @@ id-cards        →  Private 🔒
 ## 📦 Deploy على Vercel
 
 ```bash
-# 1. ارفع على GitHub
 git init && git add . && git commit -m "init"
 git push origin main
-
-# 2. اربطه على vercel.com
-# 3. أضف Environment Variables
-# 4. Deploy ✅
+# اربطه على vercel.com وأضف Environment Variables
 ```
 
-**بعد الـ Deploy، في Supabase:**
+**بعد Deploy في Supabase:**
 ```
 Authentication → URL Configuration
 Site URL: https://your-project.vercel.app
@@ -376,12 +360,12 @@ Site URL: https://your-project.vercel.app
 
 | المشكلة | الحل |
 |---------|------|
-| `Supabase credentials missing` | تأكد من `.env.local` |
+| الموقع بطيء عند الدخول | Supabase Free ينام — طبيعي في أول request |
 | `permission denied` | شغّل `schema.sql` وتأكد من RLS |
-| Admin لا يستطيع الدخول | تأكد إن الإيميل في جدول `admins` |
+| Admin لا يستطيع الدخول | تأكد إن الإيميل موجود في جدول `admins` |
 | QR لا يُولَّد | تأكد من trigger `trigger_qr_on_approval` |
 | الصور لا تظهر | تأكد إن bucket `student-photos` Public |
-| خطأ في npm install | تأكد من Node.js v18+ |
+| رقم الهاتف مش شغال | تأكد إن الرقم بـ 11 رقم يبدأ بـ 01 |
 
 ---
 
@@ -399,147 +383,3 @@ Site URL: https://your-project.vercel.app
 ![Vercel](https://img.shields.io/badge/-Vercel-black?style=flat-square&logo=vercel)
 
 </div>
-
-نظام إدارة متكامل لخدمة الإعدادي والثانوي بكنيسة الثلاثة فتية القديسين بأسوان.
-
----
-
-## 🚀 خطوات الإعداد (Setup)
-
-### 1. Supabase Setup
-
-1. ادخل على [supabase.com](https://supabase.com) وأنشئ مشروع جديد
-2. اذهب لـ **SQL Editor** وشغّل الملفات التالية بالترتيب:
-   ```
-   supabase/schema.sql    ← الجداول + RLS + Triggers
-   supabase/helpers.sql   ← RPCs + Views + Realtime
-   ```
-3. من **Authentication > Users**، أضف أول admin يدوياً
-4. شغّل seed في `helpers.sql` لإضافة الأدمن في جدول `admins`
-5. من **Storage**، تأكد من إنشاء buckets: `student-photos` و `id-cards`
-
-### 2. Environment Variables
-
-```bash
-cp .env.local.example .env.local
-```
-
-عبّي المتغيرات في `.env.local`:
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGc...
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGc...
-```
-
-### 3. Install & Run
-
-```bash
-npm install
-npm run dev
-```
-
-افتح [http://localhost:3000](http://localhost:3000)
-
----
-
-## 📁 هيكل المشروع
-
-```
-church-system/
-├── src/
-│   ├── app/
-│   │   ├── login/          ← دخول الأدمن
-│   │   ├── student-login/  ← دخول الطلاب
-│   │   ├── register/       ← تسجيل جديد (3 خطوات)
-│   │   ├── dashboard/      ← لوحة التحكم
-│   │   ├── registrations/  ← طلبات الانتظار
-│   │   ├── students/       ← إدارة الطلاب
-│   │   ├── scanner/        ← مسح QR
-│   │   ├── points/         ← النقاط + Leaderboard
-│   │   ├── id-cards/       ← بطاقات الهوية
-│   │   ├── reports/        ← تقارير + Excel/PDF
-│   │   ├── import/         ← استيراد بيانات
-│   │   ├── settings/       ← الإعدادات + المشرفون
-│   │   └── profile/        ← بروفايل الطالب
-│   ├── components/
-│   │   ├── layout/         ← AdminSidebar, AdminLayout
-│   │   ├── ui/             ← Modal, Pagination, StatCard, StudentPhoto
-│   │   └── skeletons/      ← Loading skeletons
-│   ├── hooks/
-│   │   ├── useAuth.ts      ← Admin + Student auth
-│   │   ├── useStudents.ts  ← Students + Realtime
-│   │   ├── useAttendance.ts← Attendance + QR Scanner
-│   │   └── usePoints.ts    ← Points + Dashboard
-│   ├── services/
-│   │   ├── auth.ts         ← Auth service
-│   │   ├── students.ts     ← Students CRUD
-│   │   ├── attendance.ts   ← Attendance + Anti-Cheat
-│   │   ├── points.ts       ← Points management
-│   │   └── utils.ts        ← Helper functions
-│   ├── lib/
-│   │   ├── supabaseClient.ts ← Supabase isolated client
-│   │   └── constants.ts    ← Stages, rules, config
-│   └── types/
-│       └── index.ts        ← TypeScript types
-├── supabase/
-│   ├── schema.sql          ← Database schema
-│   └── helpers.sql         ← RPCs + Views
-└── public/
-    ├── manifest.json       ← PWA manifest
-    └── offline.html        ← PWA offline page
-```
-
----
-
-## 🔐 Security Features
-
-| الميزة | التفاصيل |
-|--------|----------|
-| **RLS Policies** | كل الجداول محمية بـ Row Level Security |
-| **Admin Auth** | Supabase Auth (email + password) |
-| **Student Auth** | رقم الهاتف فقط (status=1 AND active=true) |
-| **QR Anti-Cheat** | 8 ثانية lock + 30 مسح/دقيقة + UNIQUE(student_id, date) |
-| **Sunday Only** | المسح يوم الأحد 6م–9م فقط |
-| **No Secrets** | env vars فقط، لا secrets في الكود |
-
----
-
-## 🎯 Core Features
-
-- ✅ تسجيل الطلاب بـ 3 خطوات مع رفع الصورة
-- ✅ نظام موافقة/رفض الطلبات مع Realtime
-- ✅ QR Code تلقائي عند القبول (Supabase trigger)
-- ✅ مسح QR بالكاميرا مع Anti-Cheat كامل
-- ✅ 4 حضور/شهر = 1 نقطة تلقائياً (database trigger)
-- ✅ Leaderboard + نقاط يدوية (إضافة/خصم)
-- ✅ Dashboard مع Charts + أعياد ميلاد
-- ✅ بطاقات هوية قابلة للطباعة
-- ✅ تقارير + Excel + PDF Export
-- ✅ استيراد Excel + SQL مباشر
-- ✅ Dark/Light Mode
-- ✅ PWA (installable + offline)
-- ✅ Responsive (Mobile/Tablet/Desktop)
-- ✅ RTL Arabic UI
-
----
-
-## 🚀 Deploy على Vercel
-
-```bash
-# 1. ارفع المشروع على GitHub
-# 2. ادخل vercel.com وربطه
-# 3. أضف Environment Variables من .env.local
-# 4. Deploy!
-```
-
----
-
-## 📱 PWA Installation
-
-على المحمول، افتح الموقع في المتصفح واضغط:
-- **iOS**: Share → Add to Home Screen
-- **Android**: Menu → Install App
-
----
-
-*كنيسة الثلاثة فتية القديسين — أسوان © 2024*
