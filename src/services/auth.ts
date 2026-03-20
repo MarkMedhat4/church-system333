@@ -8,15 +8,11 @@ import { storage, STUDENT_SESSION_KEY, ADMIN_SESSION_KEY } from './utils';
 
 // ── ADMIN AUTH ────────────────────────────────────────────
 
-/**
- * تسجيل دخول الأدمن بالإيميل والباسورد
- */
 export async function adminLogin(
   email: string,
   password: string
 ): Promise<ServiceResult<AdminSession>> {
   try {
-    // 1. Supabase Auth sign in
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email: email.trim().toLowerCase(),
       password,
@@ -26,7 +22,6 @@ export async function adminLogin(
       return { data: null, error: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' };
     }
 
-    // 2. Verify this email is in the admins table
     const { data: adminData, error: adminError } = await supabase
       .from('admins')
       .select('id, name, email, role')
@@ -52,17 +47,11 @@ export async function adminLogin(
   }
 }
 
-/**
- * تسجيل خروج الأدمن
- */
 export async function adminLogout(): Promise<void> {
   await supabase.auth.signOut();
   storage.remove(ADMIN_SESSION_KEY);
 }
 
-/**
- * الحصول على جلسة الأدمن الحالية
- */
 export async function getAdminSession(): Promise<AdminSession | null> {
   try {
     const { data: { session } } = await supabase.auth.getSession();
@@ -91,7 +80,7 @@ export async function getAdminSession(): Promise<AdminSession | null> {
 
 /**
  * تسجيل دخول الطالب برقم الهاتف
- * يبحث في phone فقط (status=1 AND active=true)
+ * بيجرب الرقم بالصفر وبدون الصفر عشان يغطي الحالتين
  */
 export async function studentLogin(
   phone: string
@@ -99,26 +88,62 @@ export async function studentLogin(
   try {
     const cleanPhone = phone.trim();
 
-    const { data, error } = await supabase
-      .from('students')
-      .select('student_code, name, phone, stage, photo_url, points, status, active')
-      .eq('phone', cleanPhone)
-      .single();
-
-    if (error || !data) {
-      return { data: null, error: 'رقم الهاتف غير مسجل' };
+    // ── Try both formats: with 0 and without ─────────────
+    const phoneVariants = [cleanPhone];
+    if (cleanPhone.startsWith('0')) {
+      phoneVariants.push(cleanPhone.slice(1)); // بدون الصفر
+    } else {
+      phoneVariants.push('0' + cleanPhone); // مع الصفر
     }
 
-    if (data.status !== '1' || !data.active) {
-      if (data.status === '0') {
-        return { data: null, error: 'طلبك لا يزال قيد المراجعة. انتظر موافقة الأدمن.' };
+    let data: any = null;
+
+    for (const variant of phoneVariants) {
+      const { data: row } = await supabase
+        .from('students')
+        .select('student_code, name, phone, stage, photo_url, points, status, active')
+        .eq('phone', variant)
+        .maybeSingle();
+
+      if (row) {
+        data = row;
+        break;
       }
-      if (data.status === '-1') {
-        return { data: null, error: 'تم رفض طلبك. تواصل مع الخادم.' };
-      }
-      return { data: null, error: 'حسابك غير نشط. تواصل مع الخادم.' };
     }
 
+    // ── Not found ─────────────────────────────────────────
+    if (!data) {
+      return {
+        data: null,
+        error: 'رقم الهاتف غير مسجل — تأكد من الرقم أو سجّل بياناتك أولاً',
+      };
+    }
+
+    // ── Pending ───────────────────────────────────────────
+    if (data.status === '0') {
+      return {
+        data: null,
+        error: 'طلبك قيد المراجعة ⏳ — انتظر موافقة الخادم',
+      };
+    }
+
+    // ── Rejected ──────────────────────────────────────────
+    if (data.status === '-1') {
+      return {
+        data: null,
+        error: 'تم رفض طلبك ❌ — تواصل مع الخادم لمعرفة السبب',
+      };
+    }
+
+    // ── Not active ────────────────────────────────────────
+    if (!data.active) {
+      return {
+        data: null,
+        error: 'حسابك غير مفعّل ⚠️ — تواصل مع الخادم',
+      };
+    }
+
+    // ── Success ───────────────────────────────────────────
     const session: StudentSession = {
       student_code: data.student_code,
       name: data.name,
@@ -130,21 +155,19 @@ export async function studentLogin(
 
     storage.set(STUDENT_SESSION_KEY, session);
     return { data: session, error: null };
+
   } catch {
-    return { data: null, error: 'حدث خطأ غير متوقع. حاول مرة أخرى.' };
+    return {
+      data: null,
+      error: 'حدث خطأ في الاتصال — حاول مرة أخرى',
+    };
   }
 }
 
-/**
- * تسجيل خروج الطالب
- */
 export function studentLogout(): void {
   storage.remove(STUDENT_SESSION_KEY);
 }
 
-/**
- * الحصول على جلسة الطالب من localStorage
- */
 export function getStudentSession(): StudentSession | null {
   return storage.get<StudentSession>(STUDENT_SESSION_KEY);
 }
