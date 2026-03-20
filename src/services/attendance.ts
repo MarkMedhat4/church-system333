@@ -35,18 +35,7 @@ export async function processQRScan(
   qrData: string,
   bypassTimeCheck = false
 ): Promise<AttendanceScanResult> {
-  // 1. Check scan window — skipped for super_admin
-  if (!bypassTimeCheck) {
-    const windowCheck = isScanWindowOpen();
-    if (!windowCheck.allowed) {
-      return {
-        success: false,
-        message: windowCheck.reason || 'وقت المسح غير متاح',
-        outsideWindow: true,
-        notSunday: new Date().getDay() !== SCAN_RULES.DAY_OF_WEEK,
-      };
-    }
-  }
+  // ── Time/day check removed — super_admin only controls access
 
   // 2. Anti-cheat: 8-second lock between any scans
   const now = Date.now();
