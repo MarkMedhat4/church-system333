@@ -48,7 +48,7 @@ export function useTodayAttendance() {
 }
 
 // ── useQRScanner ──────────────────────────────────────────
-export function useQRScanner(bypassTimeCheck = false) {
+export function useQRScanner(isSuperAdmin = false) {
   const [scanning, setScanning] = useState(false);
   const [lastResult, setLastResult] = useState<AttendanceScanResult | null>(null);
   const [processing, setProcessing] = useState(false);
@@ -58,7 +58,7 @@ export function useQRScanner(bypassTimeCheck = false) {
     if (processing) return;
     setProcessing(true);
 
-    const result = await processQRScan(qrData, bypassTimeCheck);
+    const result = await processQRScan(qrData, isSuperAdmin);
     setLastResult(result);
     setHistory(prev => [result, ...prev.slice(0, 19)]); // keep last 20
 
