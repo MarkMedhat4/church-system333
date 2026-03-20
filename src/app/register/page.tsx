@@ -505,7 +505,8 @@ export default function RegisterPage() {
                 </button>
               ) : (
                 <button
-                  type="submit"
+                  type="button"
+                  onClick={handleSubmit}
                   className="btn-success flex-1"
                   disabled={loading}
                 >
