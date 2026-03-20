@@ -4,7 +4,7 @@
 
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { registerStudent } from '@/services/students';
@@ -159,14 +159,20 @@ export default function RegisterPage() {
   }
 
   // ── Submit ────────────────────────────────────────────
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
+  async function handleSubmit() {
     setLoading(true);
     const result = await registerStudent(form);
     setLoading(false);
 
     if (result.error) {
-      toast.error(result.error);
+      // رقم مسجل مسبقاً — ارجع لخطوة 1 وأظهر الخطأ
+      if (result.error.includes('مسجل بالفعل')) {
+        setStep(1);
+        setErrors({ phone: 'هذا الرقم مسجل بالفعل في النظام — سجّل دخولك أو استخدم رقماً آخر' });
+        toast.error('رقم الهاتف مسجل مسبقاً');
+      } else {
+        toast.error(result.error);
+      }
     } else {
       setStudentCode(result.data?.student_code || '');
       setSubmitted(true);
@@ -247,7 +253,7 @@ export default function RegisterPage() {
             الخطوة {step} من {STEPS.length}
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={e => e.preventDefault()} className="space-y-4">
 
             {/* ══ STEP 1 — البيانات الشخصية ══════════════ */}
             {step === 1 && (
@@ -424,20 +430,33 @@ export default function RegisterPage() {
                     </p>
                   </div>
                 ) : (
-                  <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-2xl cursor-pointer hover:border-blue-400 transition-colors">
+                  <div className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-2xl">
                     <Camera size={36} className="text-slate-400 mb-2" />
-                    <span className="text-sm font-semibold text-slate-600 dark:text-slate-400">
+                    <span className="text-sm font-semibold text-slate-600 dark:text-slate-400 mb-3">
                       اختر صورة (اختياري)
                     </span>
-                    <span className="text-xs text-slate-400 mt-1">من الكاميرا أو معرض الصور</span>
                     <input
+                      id="photo-input"
                       type="file"
                       accept="image/*"
-                      capture="user"
                       className="hidden"
-                      onChange={e => handlePhoto(e.target.files?.[0] || null)}
+                      onChange={e => {
+                        e.stopPropagation();
+                        handlePhoto(e.target.files?.[0] || null);
+                      }}
                     />
-                  </label>
+                    <button
+                      type="button"
+                      onClick={e => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        document.getElementById('photo-input')?.click();
+                      }}
+                      className="btn-outline text-sm py-2 px-4"
+                    >
+                      <Camera size={14} /> اختر من الجهاز
+                    </button>
+                  </div>
                 )}
 
                 {/* Summary before submit */}
